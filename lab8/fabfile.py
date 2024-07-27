@@ -52,6 +52,31 @@ def makeUser():
     status = sudo(cmd)
     print(status)
 
+    # Create SSH directory and setting permission
+    cmd = 'mkdir -p /home/ops445p/.ssh'
+    status = sudo(cmd)
+    print(status)
+    cmd = 'touch /home/ops445p/.ssh/authorized_keys'
+    status = sudo(cmd)
+    print(status)
+    cmd = 'chmod 700 /home/ops445p/.ssh'
+    status = sudo(cmd)
+    print(status)
+    cmd = 'chown -R ops445p:ops445p /home/ops445p/.ssh'
+    status = sudo(cmd)
+    print(status)
+
+    # Add the SSH public key to the authorized_keys file
+    put('id_rsa.pub', '/home/ops445p/.ssh/authorized_keys', use_sudo=True)
+    cmd = 'chmod 600 /home/ops445p/.ssh/authorized_keys'
+    status = sudo(cmd)
+    print(status)
+    cmd = 'chown ops445p:ops445p /home/ops445p/.ssh/authorized_keys'
+    status = sudo(cmd)
+    print(status)
+
+
+
 def removeUser():
     cmd = 'userdel -r ops445p'
     status =sudo(cmd)
