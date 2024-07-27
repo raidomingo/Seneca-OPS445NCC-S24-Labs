@@ -1,3 +1,8 @@
+# This is fabfile is created for an ubuntu vm machine. It will not work with centos.
+# Central machine is fedora and remote is ubuntu.
+# Author: rdomingo6
+
+
 from fabric.api import *
 
 # Set the name of the user login to the remote host
