@@ -19,6 +19,7 @@ import sys
 
 def day_of_week(date: str) -> str:
     "Based on the algorithm by Tomohiko Sakamoto"
+    #Splits the date string to 3 variables day, month and year. Delimeter is /.
     day, month, year = (int(x) for x in date.split('/'))
     days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] 
     offset = {1:0, 2:3, 3:2, 4:5, 5:0, 6:3, 7:5, 8:1, 9:4, 10:6, 11:2, 12:4}
@@ -28,8 +29,10 @@ def day_of_week(date: str) -> str:
     return days[num]
 
 def leap_year(year: int) -> bool:
-    "return true if the year is a leap year"
-    ...
+    '''
+    A leap year is divisible by 4, but if it is also divisible by 100 it is not a leap year.
+    Unless the year is also divisible by 400, in that case it is leap year.
+    '''
     if year % 4 == 0:
         if year % 100 == 0:
             if year % 400 == 0:
@@ -66,9 +69,9 @@ def after(date: str) -> str:
     max_days = mon_max(mon, year)
     
     if day > max_days:
-        mon += 1
+        mon += 1           # moves to the next month
         if mon > 12:
-            year += 1
+            year += 1    # moves to next year if exceeds december
             mon = 1
         day = 1  # if tmp_day > this month's max, reset to 1 
     return f"{day:02}/{mon:02}/{year}"
@@ -81,16 +84,17 @@ def before(date: str) -> str:
 
     max_days = mon_max(mon, year)
     
-    if day == 0:    # Day 0 is the last day of the previous month
+    if day < 1:    # Day 0 is the last day of the previous month
         mon -= 1    # adjusting to last month
-        if mon == 0:
+        if mon < 1:
             year -= 1 #adjusting to last year
             mon = 12
         day = mon_max(mon, year)  # if the day is 1, next ady will reset to the last day of the last month
     return f"{day:02}/{mon:02}/{year}"
 
 def usage():
-    "Print a usage message to the user"
+    "Print a usage message to the user if the user has missing and invalid arguments"
+    print('Invalid Argument!')
     print("Usage: " + str(sys.argv[0]) + " DD/MM/YYYY NN")
     sys.exit()
 
@@ -110,19 +114,34 @@ def valid_date(date: str) -> bool:
 def day_iter(start_date: str, num: int) -> str:
     "iterates from start date by num to return end date in DD/MM/YYYY"
     ...
-    cur_date = start_date
+    current_date = start_date
     if num >= 0:
         for _ in range(num):
-            cur_date = after(cur_date)
+            current_date = after(current_date)
     else:
         for _ in range(-num):
-            cur_date = before(cur_date)
-    return cur_date
+            current_date = before(current_date)
+    return current_date
 
 if __name__ == "__main__":
     # check length of arguments
+    if len(sys.argv) != 3:
+        usage()
+
     # check first arg is a valid date
+    start_date = sys.argv[1]
+    if not valid_date(start_date):
+        usage()
+
     # check that second arg is a valid number (+/-)
-    # call day_iter function to get end date, save to x
+    try:
+        number_days = int(sys.argv[2])
+    except ValueError:
+        usage()
+
+    # call day_iter function to get end date, save to end_date
+    end_date = day_iter(start_date, number_days)
+    day_of_end_date = day_of_week(end_date)
+
     # print(f'The end date is {day_of_week(x)}, {x}.')
-    pass
+    print(f'The end date is {day_of_end_date}, {end_date}.')
