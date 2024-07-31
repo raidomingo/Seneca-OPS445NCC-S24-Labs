@@ -95,12 +95,29 @@ def usage():
     sys.exit()
 
 def valid_date(date: str) -> bool:
-    "check validity of date"
+    "check validity of date: Returns true if it's VALID and false if it's INVALID"
     ...
-
+    try:
+        day, mon, year = (int(x) for x in date.split('/'))
+        if mon < 1 or mon > 12: # Range of valid months
+            return False
+        if day < 1 or day > mon_max(mon, year): #range of valid days per month
+            return False
+        return True
+    except ValueError:
+        return False
+    
 def day_iter(start_date: str, num: int) -> str:
     "iterates from start date by num to return end date in DD/MM/YYYY"
     ...
+    cur_date = start_date
+    if num >= 0:
+        for _ in range(num):
+            cur_date = after(cur_date)
+    else:
+        for _ in range(-num):
+            cur_date = before(cur_date)
+    return cur_date
 
 if __name__ == "__main__":
     # check length of arguments
