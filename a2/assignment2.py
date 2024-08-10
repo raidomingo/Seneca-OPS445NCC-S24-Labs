@@ -8,13 +8,16 @@ def parse_command_args() -> object:
 
   "Set up argparse here. Call this function inside main."
 
-  parser = argparse.ArgumentParser(description="Memory Visualiser -- See Memory Usage Report with bar charts",epilog="Copyright 2023")
+  parser = argparse.ArgumentParser(description="Memory Visualiser -- See Memory Usage Report with bar charts",epilog="Copyright 2024")
 
   parser.add_argument("-l", "--length", type=int, default=20, help="Specify the length of the graph. Default is 20.")
 
   # Make this entry for human-readable. Check the docs to make it a True/False option.
 
   parser.add_argument("program", type=str, nargs='?', help="if a program is specified, show memory use of all associated processes. Show only total use if not.")
+
+  # Makes a human readable format.
+  parser.add_argument("-H", "--human-readable", action="store_true", help="Print sizes in human readable format")
 
   args = parser.parse_args()
 
@@ -76,17 +79,39 @@ def pids_of_prog(app_name: str) -> list:
 
   # please use os.popen('pidof <app>') to accomplish the task!
 
-  pass
+  try:
+    pids = os.popen('pidof ' + str(app_name)).read().strip()
+    return [pid for pid in pids.split() if pid.isdigit()]
+  except Exception as e:
+    print("Error getting pids for " + str(app_name) + ": " + str(e), file=sys.stderr)
+    return []
 
 def rss_mem_of_pid(proc_id: str) -> int:
 
   "given a process id, return the Resident memory used"
 
   # for a process, open the smaps file and return the total of each
-
-  # Rss line.
-
-  pass
+  total_rss = 0
+  smaps_path = f'/proc/{proc_id}/smaps'
+    
+  try:
+    # Open the smaps file
+    with open(smaps_path, 'r') as f:
+      for line in f:
+        if line.startswith('Rss:'):
+          # Sum up all Rss values
+          total_rss += int(line.split()[1])
+                    
+  except FileNotFoundError:
+    print(f"Error: The file {smaps_path} does not exist. The process may not be running or accessible.", file=sys.stderr)
+  except PermissionError:
+    print(f"Error: Permission denied when accessing {smaps_path}.", file=sys.stderr)
+  except ValueError as e:
+    print(f"Error parsing RSS memory for pid {proc_id}: {e}", file=sys.stderr)
+  except Exception as e:
+    print(f"Unexpected error reading memory for pid {proc_id}: {e}", file=sys.stderr)
+  
+  return total_rss if total_rss > 0 else 0
 
 def bytes_to_human_r(kibibytes: int, decimal_places: int=2) -> str:
 
