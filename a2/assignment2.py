@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 '''
-OPS445 Assignment 2 - Summer 2024
+OPS445 Assignment 2A - Summer 2024
 Program: assignment2.py 
 The python code in this file is original work written by
 Raymond Domingo. No code in this file is copied from any other source
