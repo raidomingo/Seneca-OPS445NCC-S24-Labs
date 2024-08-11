@@ -41,17 +41,11 @@ def get_sys_mem() -> int:
   "return total system memory (used or available) in kB"
 
   # open the meminfo file to accomplish the task!
-  try:
-    f = open('/proc/meminfo', 'r')
-    for line in f:
-      if line.startswith('MemTotal:'):
-        return int(line.split()[1])
-  except FileNotFoundError:
-    print("File /proc/meminfo not found.", file=sys.stderr)
-  except Exception as e:
-    print(f"Error reading total memory: {e}", file=sys.stderr)
-  finally:
-    f.close()
+  f = open('/proc/meminfo', 'r')
+  for line in f:
+    if line.startswith('MemTotal:'):
+      return int(line.split()[1])
+  f.close()
 
   raise RuntimeError("Could not find total memory in /proc/meminfo")
 
@@ -61,17 +55,10 @@ def get_avail_mem() -> int:
 
   # open the meminfo file to accomplish the task!
 
-  try:
-    with open('/proc/meminfo', 'r') as f:
-      for line in f:
-        if line.startswith('MemAvailable:'):
-          return int(line.split()[1])
-  except FileNotFoundError:
-        print("File /proc/meminfo not found.", file=sys.stderr)
-  except Exception as e:
-        print(f"Error reading available memory: {e}", file=sys.stderr)
-    
-  raise RuntimeError("Could not find available memory in /proc/meminfo")
+  f = open('/proc/meminfo', 'r')
+  for line in f:
+    if line.startswith('MemAvailable:'):
+      return int(line.split()[1])
 
 def pids_of_prog(app_name: str) -> list:
 
@@ -94,23 +81,15 @@ def rss_mem_of_pid(proc_id: str) -> int:
   total_rss = 0
   smaps_path = f'/proc/{proc_id}/smaps'
     
-  try:
-    # Open the smaps file
-    with open(smaps_path, 'r') as f:
-      for line in f:
-        if line.startswith('Rss:'):
-          # Sum up all Rss values
-          total_rss += int(line.split()[1])
-                    
-  except FileNotFoundError:
-    print(f"Error: The file {smaps_path} does not exist. The process may not be running or accessible.", file=sys.stderr)
-  except PermissionError:
-    print(f"Error: Permission denied when accessing {smaps_path}.", file=sys.stderr)
-  except ValueError as e:
-    print(f"Error parsing RSS memory for pid {proc_id}: {e}", file=sys.stderr)
-  except Exception as e:
-    print(f"Unexpected error reading memory for pid {proc_id}: {e}", file=sys.stderr)
-  
+
+  # Open the smaps file
+  f = open(smaps_path, 'r')
+  for line in f:
+    if line.startswith('Rss:'):
+      # Sum up all Rss values
+      total_rss += int(line.split()[1])                  
+  f.close()
+    
   return total_rss if total_rss > 0 else 0
 
 def bytes_to_human_r(kibibytes: int, decimal_places: int=2) -> str:
@@ -139,10 +118,38 @@ if __name__ == "__main__":
 
   args = parse_command_args()
 
-  if not args.program: # not program name is specified.
+  total_mem = get_sys_mem()
+  available_mem = get_avail_mem()
+  used_mem = total_mem - available_mem
+  percent_used = used_mem / total_mem
 
-    pass
 
+  if args.human_readable:
+    total_mem_hr = bytes_to_human_r(total_mem)
+    used_mem_hr = bytes_to_human_r(used_mem)
   else:
+    total_mem_hr = f'{total_mem}'
+    used_mem_hr = f'{used_mem}'
 
-    pass
+  if args.program:
+    pids = pids_of_prog(args.program)
+    if not pids:
+      print(f"{args.program} not found.")
+    else:
+      for pid in pids:
+        mem = rss_mem_of_pid(pid)
+        percent_pid = mem / total_mem
+        if args.human_readable:
+          mem_hr = bytes_to_human_r(mem)
+        else:
+          mem_hr = f'{mem}'
+        print(f"{pid: <15} [ {percent_to_graph(percent_pid, args.length)} | {percent_pid*100:3.0f}% ] {mem_hr}/{total_mem_hr}")
+      total_program_mem = sum(rss_mem_of_pid(pid) for pid in pids)
+      percent_program = total_program_mem / total_mem
+      if args.human_readable:
+        total_program_mem_hr = bytes_to_human_r(total_program_mem)
+      else:
+        total_program_mem_hr = f'{total_program_mem}'
+      print(f"{args.program: <15} [ {percent_to_graph(percent_program, args.length)} | {percent_program*100:3.0f}% ] {total_program_mem_hr}/{total_mem_hr}")
+  else:
+    print(f"Memory         [ {percent_to_graph(percent_used, args.length)} | {percent_used*100:3.0f}% ] {used_mem_hr}/{total_mem_hr}")
