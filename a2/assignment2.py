@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
 
+'''
+OPS445 Assignment 2 - Summer 2024
+Program: assignment2.py 
+The python code in this file is original work written by
+Raymond Domingo. No code in this file is copied from any other source
+except those provided by the course instructor, including any person,
+textbook, or on-line resource. I have not shared this python script
+with anyone or anything except for submission for grading. I understand
+that the Academic Honesty Policy will be enforced and
+violators will be reported and appropriate action will be taken.
+
+Author: Raymond Domingo
+Description: A script that shows the memory usage with a simple bar graph.
+'''
+
 import argparse
 
 import os, sys
@@ -46,8 +61,7 @@ def get_sys_mem() -> int:
     if line.startswith('MemTotal:'):
       return int(line.split()[1])
   f.close()
-
-  raise RuntimeError("Could not find total memory in /proc/meminfo")
+  return 0
 
 def get_avail_mem() -> int:
 
@@ -59,6 +73,7 @@ def get_avail_mem() -> int:
   for line in f:
     if line.startswith('MemAvailable:'):
       return int(line.split()[1])
+  f.close()
 
 def pids_of_prog(app_name: str) -> list:
 
@@ -75,22 +90,23 @@ def pids_of_prog(app_name: str) -> list:
 
 def rss_mem_of_pid(proc_id: str) -> int:
 
-  "given a process id, return the Resident memory used"
-
-  # for a process, open the smaps file and return the total of each
+  "given a process id, return the Resident memory use "
+ 
   total_rss = 0
   smaps_path = f'/proc/{proc_id}/smaps'
     
-
-  # Open the smaps file
+  # for a process, open the smaps file and return the total of each
   f = open(smaps_path, 'r')
   for line in f:
-    if line.startswith('Rss:'):
+    if line.startswith('Rss'):
       # Sum up all Rss values
       total_rss += int(line.split()[1])                  
   f.close()
-    
-  return total_rss if total_rss > 0 else 0
+  
+  if total_rss > 0:
+    return total_rss
+  else:
+    return 0
 
 def bytes_to_human_r(kibibytes: int, decimal_places: int=2) -> str:
 
@@ -123,7 +139,7 @@ if __name__ == "__main__":
   used_mem = total_mem - available_mem
   percent_used = used_mem / total_mem
 
-
+  # if user puts in -H or not
   if args.human_readable:
     total_mem_hr = bytes_to_human_r(total_mem)
     used_mem_hr = bytes_to_human_r(used_mem)
@@ -131,8 +147,11 @@ if __name__ == "__main__":
     total_mem_hr = f'{total_mem}'
     used_mem_hr = f'{used_mem}'
 
+  #if user specifys a program or not
   if args.program:
     pids = pids_of_prog(args.program)
+    # One to identify if the program is running is the presence of processes
+    # Once tested, we can go either way
     if not pids:
       print(f"{args.program} not found.")
     else:
@@ -152,4 +171,11 @@ if __name__ == "__main__":
         total_program_mem_hr = f'{total_program_mem}'
       print(f"{args.program: <15} [ {percent_to_graph(percent_program, args.length)} | {percent_program*100:3.0f}% ] {total_program_mem_hr}/{total_mem_hr}")
   else:
+    '''
+    Direct output of the memory usage of the host or a specific program
+    the use of :3.0f is a format specifier of the percentage. minimum width of the number is 3. and 0 is the number of 
+    decimals. and f is for floating point. THIS MAKES THE PIPES ALLIGN VERTICALLY.
+    and % sign at the end for the units.
+    a similar format is reused in the earlier part.
+    '''
     print(f"Memory         [ {percent_to_graph(percent_used, args.length)} | {percent_used*100:3.0f}% ] {used_mem_hr}/{total_mem_hr}")
